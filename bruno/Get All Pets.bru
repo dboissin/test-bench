@@ -1,0 +1,19 @@
+meta {
+  name: Get All Pets (User)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{api_url}}/api/pets
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{user_token}}
+}
+
+assert {
+  res.status: eq 200
+}

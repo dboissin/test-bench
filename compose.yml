@@ -1,0 +1,134 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: oracle
+    environment:
+      - ORACLE_PASSWORD=oracle
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: keycloak
+    command: start-dev --import-realm
+    environment:
+      - KC_DB=dev-file
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm.json:ro
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.5.12
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:5.5.12
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-init:
+    image: confluentinc/cp-kafka:5.5.12
+    container_name: kafka-init
+    depends_on:
+      - kafka
+    volumes:
+      - ./kafka-init/create-topics.sh:/create-topics.sh
+    command: ["/bin/bash", "/create-topics.sh"]
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8081:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cat/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+
+  flyway:
+    image: flyway/flyway:10.11
+    container_name: flyway
+    command: migrate
+    depends_on:
+      oracle:
+        condition: service_healthy
+    volumes:
+      - ./flyway/sql:/flyway/sql
+    environment:
+      - FLYWAY_URL=jdbc:oracle:thin:@oracle:1521/FREEPDB1
+      - FLYWAY_USER=SYSTEM
+      - FLYWAY_PASSWORD=oracle
+      - FLYWAY_SCHEMAS=PETAPP
+      - FLYWAY_DEFAULT_SCHEMA=PETAPP
+      - FLYWAY_CREATE_SCHEMAS=true
+
+  bruno:
+    image: node:20-alpine
+    container_name: bruno-cli
+    profiles:
+      - test
+    volumes:
+      - ./bruno:/bruno
+    working_dir: /bruno
+    command: sh -c "npm install -g @usebruno/cli && bru run --env local"
+    network_mode: "host"
+
+volumes:
+  oracle_data:
+  es_data:

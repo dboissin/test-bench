@@ -1,0 +1,28 @@
+meta {
+  name: Create Pet (Admin)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{api_url}}/api/pets
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{admin_token}}
+}
+
+body:json {
+  {
+    "name": "Fluffy",
+    "species": "Cat"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.name: eq Fluffy
+  res.body.species: eq Cat
+}

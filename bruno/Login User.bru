@@ -1,0 +1,28 @@
+meta {
+  name: Login User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{kc_url}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  client_id: {{client_id}}
+  grant_type: password
+  username: testuser
+  password: testpass
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("user_token", res.body.access_token);
+  }
+}
+
+assert {
+  res.status: eq 200
+}
