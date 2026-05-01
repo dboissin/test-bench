@@ -66,6 +66,18 @@ class PetControllerTest {
 
     @Test
     @WithMockUser(roles = "user")
+    void createPetWithInsufficientRoleShouldReturn403() throws Exception {
+        String petJson = "{\"name\":\"Buddy\",\"species\":\"Dog\"}";
+
+        mockMvc.perform(post("/api/pets")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(petJson))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "user")
     void getAllPetsShouldRequireUserRole() throws Exception {
         PetDto mockDto = new PetDto("1", "Buddy", "Dog");
         Mockito.when(petService.getAllPets()).thenReturn(List.of(mockDto));

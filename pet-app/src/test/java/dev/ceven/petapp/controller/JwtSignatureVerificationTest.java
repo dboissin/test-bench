@@ -112,4 +112,16 @@ class JwtSignatureVerificationTest {
                 .header("Authorization", "Bearer " + invalidToken))
                 .andExpect(status().isUnauthorized()); // 401
     }
+
+    @Test
+    void whenNoneSignatureAlgorithm_thenReturns401() throws Exception {
+        // Base64UrlEncoded header: {"alg":"none","typ":"JWT"} -> eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0
+        // Base64UrlEncoded payload: {"sub":"testuser","iss":"http://localhost:8080/realms/petapp-realm","realm_access":{"roles":["user"]}} -> eyJzdWIiOiJ0ZXN0dXNlciIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvcGV0YXBwLXJlYWxtIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbInVzZXIiXX19
+        // A 'none' algorithm token has no signature (ends with a dot)
+        String noneToken = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0ZXN0dXNlciIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvcGV0YXBwLXJlYWxtIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbInVzZXIiXX19.";
+
+        mockMvc.perform(get("/api/pets")
+                .header("Authorization", "Bearer " + noneToken))
+                .andExpect(status().isUnauthorized()); // 401
+    }
 }
