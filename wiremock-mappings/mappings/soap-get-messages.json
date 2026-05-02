@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/soap/messages",
+    "headers": {
+      "SOAPAction": {
+        "contains": "getMessages"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/xml; charset=utf-8"
+    },
+    "transformers": ["response-template"],
+    "body": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:mes=\"http://example.com/messages\">\n   <soapenv:Header/>\n   <soapenv:Body>\n      <mes:getMessagesResponse>\n         <mes:messageId>101-{{xPath request.body \"//*[local-name()='threadId']/text()\"}}</mes:messageId>\n         <mes:messageId>102-{{xPath request.body \"//*[local-name()='threadId']/text()\"}}</mes:messageId>\n         <mes:messageId>103-{{xPath request.body \"//*[local-name()='threadId']/text()\"}}</mes:messageId>\n         <mes:threadId>{{xPath request.body \"//*[local-name()='threadId']/text()\"}}</mes:threadId>\n      </mes:getMessagesResponse>\n   </soapenv:Body>\n</soapenv:Envelope>"
+  }
+}

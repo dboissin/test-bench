@@ -43,6 +43,11 @@ spring:
           issuer-uri: http://localhost:8080/realms/petapp-realm
           jwk-set-uri: http://localhost:8080/realms/petapp-realm/protocol/openid-connect/certs
 
+
+petapp:
+  soap:
+    url: http://localhost:8089/soap/messages
+
 logging:
   level:
     org.springframework.security: DEBUG

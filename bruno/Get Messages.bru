@@ -1,0 +1,19 @@
+meta {
+  name: Get Messages
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{api_url}}/api/messages?threadId=thread-A
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{user_token}}
+}
+
+assert {
+  res.status: eq 200
+}
